@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.16.0">
+  <process id="Process_AsIs" name="Alta de Proveedores (As-Is)" isExecutable="false">
+    <laneSet id="LaneSet_1">
+      <lane id="Lane_Solicitante" name="Solicitante (Compras)">
+        <flowNodeRef>StartEvent_1</flowNodeRef>
+        <flowNodeRef>Task_LlenarForm</flowNodeRef>
+        <flowNodeRef>Task_EnviarEmail</flowNodeRef>
+      </lane>
+      <lane id="Lane_Admin" name="Administrativo (Compras)">
+        <flowNodeRef>Task_RecibirForm</flowNodeRef>
+        <flowNodeRef>Task_BuscarDuplicados</flowNodeRef>
+        <flowNodeRef>Gateway_Existe</flowNodeRef>
+        <flowNodeRef>Task_VerificarFiscal</flowNodeRef>
+        <flowNodeRef>Gateway_Aprobacion</flowNodeRef>
+        <flowNodeRef>Task_PedirAprobEmail</flowNodeRef>
+        <flowNodeRef>EndEvent_Duplicado</flowNodeRef>
+        <flowNodeRef>EndEvent_Alta</flowNodeRef>
+        <flowNodeRef>Task_RegistrarPlanilla</flowNodeRef>
+      </lane>
+      <lane id="Lane_Jefe" name="Jefe de Compras">
+        <flowNodeRef>Task_Revisar</flowNodeRef>
+        <flowNodeRef>Gateway_Aprueba</flowNodeRef>
+        <flowNodeRef>EndEvent_Rechazo</flowNodeRef>
+        <flowNodeRef>Task_NotifRechazo</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="StartEvent_1" name="Necesidad de nuevo proveedor">
+      <outgoing>Flow_1</outgoing>
+    </startEvent>
+    <task id="Task_LlenarForm" name="Llenar formulario en papel">
+      <incoming>Flow_1</incoming>
+      <outgoing>Flow_2</outgoing>
+    </task>
+    <task id="Task_EnviarEmail" name="Enviar formulario por email">
+      <incoming>Flow_2</incoming>
+      <outgoing>Flow_3</outgoing>
+    </task>
+    <task id="Task_RecibirForm" name="Recibir y revisar formulario">
+      <incoming>Flow_3</incoming>
+      <outgoing>Flow_4</outgoing>
+    </task>
+    <task id="Task_BuscarDuplicados" name="Buscar duplicados en planilla Excel">
+      <incoming>Flow_4</incoming>
+      <outgoing>Flow_5</outgoing>
+    </task>
+    <exclusiveGateway id="Gateway_Existe" name="¿Ya existe?">
+      <incoming>Flow_5</incoming>
+      <outgoing>Flow_ExisteSi</outgoing>
+      <outgoing>Flow_ExisteNo</outgoing>
+    </exclusiveGateway>
+    <endEvent id="EndEvent_Duplicado" name="Fin - Duplicado">
+      <incoming>Flow_ExisteSi</incoming>
+    </endEvent>
+    <task id="Task_VerificarFiscal" name="Verificar condición fiscal manualmente">
+      <incoming>Flow_ExisteNo</incoming>
+      <outgoing>Flow_6</outgoing>
+    </task>
+    <exclusiveGateway id="Gateway_Aprobacion" name="¿Requiere aprobación?">
+      <incoming>Flow_6</incoming>
+      <outgoing>Flow_AprobNo</outgoing>
+      <outgoing>Flow_AprobSi</outgoing>
+    </exclusiveGateway>
+    <task id="Task_RegistrarPlanilla" name="Registrar proveedor en planilla">
+      <incoming>Flow_AprobNo</incoming>
+      <incoming>Flow_JefeAprueba</incoming>
+      <outgoing>Flow_Fin</outgoing>
+    </task>
+    <task id="Task_PedirAprobEmail" name="Enviar email pidiendo aprobación">
+      <incoming>Flow_AprobSi</incoming>
+      <outgoing>Flow_7</outgoing>
+    </task>
+    <endEvent id="EndEvent_Alta" name="Fin - Proveedor registrado">
+      <incoming>Flow_Fin</incoming>
+    </endEvent>
+    <task id="Task_Revisar" name="Revisar solicitud por email">
+      <incoming>Flow_7</incoming>
+      <outgoing>Flow_8</outgoing>
+    </task>
+    <exclusiveGateway id="Gateway_Aprueba" name="¿Aprueba?">
+      <incoming>Flow_8</incoming>
+      <outgoing>Flow_JefeAprueba</outgoing>
+      <outgoing>Flow_JefeRechaza</outgoing>
+    </exclusiveGateway>
+    <task id="Task_NotifRechazo" name="Notificar rechazo por email">
+      <incoming>Flow_JefeRechaza</incoming>
+      <outgoing>Flow_FinRechazo</outgoing>
+    </task>
+    <endEvent id="EndEvent_Rechazo" name="Fin - Rechazado">
+      <incoming>Flow_FinRechazo</incoming>
+    </endEvent>
+    <sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_LlenarForm" />
+    <sequenceFlow id="Flow_2" sourceRef="Task_LlenarForm" targetRef="Task_EnviarEmail" />
+    <sequenceFlow id="Flow_3" sourceRef="Task_EnviarEmail" targetRef="Task_RecibirForm" />
+    <sequenceFlow id="Flow_4" sourceRef="Task_RecibirForm" targetRef="Task_BuscarDuplicados" />
+    <sequenceFlow id="Flow_5" sourceRef="Task_BuscarDuplicados" targetRef="Gateway_Existe" />
+    <sequenceFlow id="Flow_ExisteSi" name="Sí" sourceRef="Gateway_Existe" targetRef="EndEvent_Duplicado" />
+    <sequenceFlow id="Flow_ExisteNo" name="No" sourceRef="Gateway_Existe" targetRef="Task_VerificarFiscal" />
+    <sequenceFlow id="Flow_6" sourceRef="Task_VerificarFiscal" targetRef="Gateway_Aprobacion" />
+    <sequenceFlow id="Flow_AprobNo" name="No (Resp. Inscripto)" sourceRef="Gateway_Aprobacion" targetRef="Task_RegistrarPlanilla" />
+    <sequenceFlow id="Flow_AprobSi" name="Sí (Monotrib./Exento)" sourceRef="Gateway_Aprobacion" targetRef="Task_PedirAprobEmail" />
+    <sequenceFlow id="Flow_7" sourceRef="Task_PedirAprobEmail" targetRef="Task_Revisar" />
+    <sequenceFlow id="Flow_8" sourceRef="Task_Revisar" targetRef="Gateway_Aprueba" />
+    <sequenceFlow id="Flow_JefeAprueba" name="Sí" sourceRef="Gateway_Aprueba" targetRef="Task_RegistrarPlanilla" />
+    <sequenceFlow id="Flow_JefeRechaza" name="No" sourceRef="Gateway_Aprueba" targetRef="Task_NotifRechazo" />
+    <sequenceFlow id="Flow_Fin" sourceRef="Task_RegistrarPlanilla" targetRef="EndEvent_Alta" />
+    <sequenceFlow id="Flow_FinRechazo" sourceRef="Task_NotifRechazo" targetRef="EndEvent_Rechazo" />
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_AsIs">
+      <bpmndi:BPMNShape id="Lane_Jefe_di" bpmnElement="Lane_Jefe" isHorizontal="true">
+        <dc:Bounds x="160" y="510" width="1340" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Admin_di" bpmnElement="Lane_Admin" isHorizontal="true">
+        <dc:Bounds x="160" y="260" width="1340" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Solicitante_di" bpmnElement="Lane_Solicitante" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1340" height="180" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="212" y="152" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="188" y="196" width="83" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_LlenarForm_di" bpmnElement="Task_LlenarForm">
+        <dc:Bounds x="290" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_EnviarEmail_di" bpmnElement="Task_EnviarEmail">
+        <dc:Bounds x="430" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RecibirForm_di" bpmnElement="Task_RecibirForm">
+        <dc:Bounds x="430" y="330" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_BuscarDuplicados_di" bpmnElement="Task_BuscarDuplicados">
+        <dc:Bounds x="570" y="330" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Existe_di" bpmnElement="Gateway_Existe" isMarkerVisible="true">
+        <dc:Bounds x="705" y="345" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="701" y="403" width="58" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_VerificarFiscal_di" bpmnElement="Task_VerificarFiscal">
+        <dc:Bounds x="790" y="330" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Aprobacion_di" bpmnElement="Gateway_Aprobacion" isMarkerVisible="true">
+        <dc:Bounds x="925" y="345" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="979" y="356" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_PedirAprobEmail_di" bpmnElement="Task_PedirAprobEmail">
+        <dc:Bounds x="1000" y="420" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Revisar_di" bpmnElement="Task_Revisar">
+        <dc:Bounds x="1000" y="570" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Aprueba_di" bpmnElement="Gateway_Aprueba" isMarkerVisible="true">
+        <dc:Bounds x="1135" y="585" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Rechazo_di" bpmnElement="EndEvent_Rechazo">
+        <dc:Bounds x="1362" y="592" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1409" y="603" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Duplicado_di" bpmnElement="EndEvent_Duplicado">
+        <dc:Bounds x="712" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="763" y="273" width="74" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Alta_di" bpmnElement="EndEvent_Alta">
+        <dc:Bounds x="1332" y="302" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1377.5" y="306" width="125" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RegistrarPlanilla_di" bpmnElement="Task_RegistrarPlanilla">
+        <dc:Bounds x="1160" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifRechazo_di" bpmnElement="Task_NotifRechazo">
+        <dc:Bounds x="1230" y="570" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="248" y="170" />
+        <di:waypoint x="290" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="390" y="170" />
+        <di:waypoint x="430" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="480" y="210" />
+        <di:waypoint x="480" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="530" y="370" />
+        <di:waypoint x="570" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="670" y="370" />
+        <di:waypoint x="705" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ExisteSi_di" bpmnElement="Flow_ExisteSi">
+        <di:waypoint x="730" y="345" />
+        <di:waypoint x="730" y="298" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="740" y="311" width="11" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ExisteNo_di" bpmnElement="Flow_ExisteNo">
+        <di:waypoint x="755" y="370" />
+        <di:waypoint x="790" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="890" y="370" />
+        <di:waypoint x="925" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AprobNo_di" bpmnElement="Flow_AprobNo">
+        <di:waypoint x="950" y="345" />
+        <di:waypoint x="950" y="320" />
+        <di:waypoint x="1160" y="320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="957" y="303" width="105" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AprobSi_di" bpmnElement="Flow_AprobSi">
+        <di:waypoint x="950" y="395" />
+        <di:waypoint x="950" y="460" />
+        <di:waypoint x="1000" y="460" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="948" y="403" width="124" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="1050" y="500" />
+        <di:waypoint x="1050" y="570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="1100" y="610" />
+        <di:waypoint x="1135" y="610" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_JefeAprueba_di" bpmnElement="Flow_JefeAprueba">
+        <di:waypoint x="1160" y="585" />
+        <di:waypoint x="1160" y="460" />
+        <di:waypoint x="1220" y="460" />
+        <di:waypoint x="1220" y="360" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1134" y="553" width="11" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_JefeRechaza_di" bpmnElement="Flow_JefeRechaza">
+        <di:waypoint x="1185" y="610" />
+        <di:waypoint x="1230" y="610" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1192" y="585" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Fin_di" bpmnElement="Flow_Fin">
+        <di:waypoint x="1260" y="320" />
+        <di:waypoint x="1332" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FinRechazo_di" bpmnElement="Flow_FinRechazo">
+        <di:waypoint x="1330" y="610" />
+        <di:waypoint x="1362" y="610" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
